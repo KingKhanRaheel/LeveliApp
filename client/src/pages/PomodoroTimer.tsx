@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import TimerDisplay from "@/components/TimerDisplay";
 import TimerControls from "@/components/TimerControls";
 import PomodoroIndicator from "@/components/PomodoroIndicator";
 import SessionCompleteModal from "@/components/SessionCompleteModal";
+import DurationSelector from "@/components/DurationSelector";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useTimer } from "@/hooks/useTimer";
 import { useGameState } from "@/hooks/useGameState";
 import { getRandomMessage } from "@/lib/achievements";
@@ -17,24 +19,48 @@ export default function PomodoroTimer() {
   
   // Load saved Pomodoro state
   const savedState = localStorage.getItem("pomodoro_state");
-  const initialState = savedState ? JSON.parse(savedState) : { mode: "focus", cycle: 0, completedMinutes: 0 };
+  const initialState = savedState ? JSON.parse(savedState) : { 
+    mode: "focus", 
+    cycle: 0, 
+    completedMinutes: 0,
+    focusDuration: 25,
+    breakDuration: 5,
+    longBreakDuration: 15
+  };
   
   const [mode, setMode] = useState<PomodoroMode>(initialState.mode);
   const [cycle, setCycle] = useState(initialState.cycle);
   const [completedMinutes, setCompletedMinutes] = useState(initialState.completedMinutes);
+  const [hasStarted, setHasStarted] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   
-  const focusDuration = 25;
-  const breakDuration = 5;
-  const longBreakDuration = 15;
+  const [focusDuration, setFocusDuration] = useState(initialState.focusDuration);
+  const [breakDuration, setBreakDuration] = useState(initialState.breakDuration);
+  const [longBreakDuration, setLongBreakDuration] = useState(initialState.longBreakDuration);
   
   const initialDuration = mode === "focus" ? focusDuration : mode === "break" ? breakDuration : longBreakDuration;
   const { minutes, seconds, isRunning, toggleTimer, reset, end, totalSeconds } = useTimer(initialDuration, "pomodoro_timer_state");
   const { completeSession } = useGameState();
+
+  // Check if timer has been started
+  useEffect(() => {
+    const saved = localStorage.getItem("pomodoro_timer_state");
+    if (saved) {
+      setHasStarted(true);
+    }
+  }, []);
   
   // Save Pomodoro state
   useEffect(() => {
-    localStorage.setItem("pomodoro_state", JSON.stringify({ mode, cycle, completedMinutes }));
-  }, [mode, cycle, completedMinutes]);
+    localStorage.setItem("pomodoro_state", JSON.stringify({ 
+      mode, 
+      cycle, 
+      completedMinutes,
+      focusDuration,
+      breakDuration,
+      longBreakDuration
+    }));
+  }, [mode, cycle, completedMinutes, focusDuration, breakDuration, longBreakDuration]);
   
   const [showModal, setShowModal] = useState(false);
   const [sessionResult, setSessionResult] = useState<{
@@ -92,6 +118,7 @@ export default function PomodoroTimer() {
 
   const handleModalClose = () => {
     setShowModal(false);
+    setHasStarted(false);
     setLocation("/");
     
     // Reset state
@@ -99,6 +126,14 @@ export default function PomodoroTimer() {
     setCycle(0);
     setCompletedMinutes(0);
     localStorage.removeItem("pomodoro_state");
+    localStorage.removeItem("pomodoro_timer_state");
+  };
+
+  const handleDurationSelect = (mins: number) => {
+    setFocusDuration(mins);
+    setHasStarted(true);
+    setShowSettings(false);
+    reset(mins);
   };
 
   const getModeLabel = () => {
@@ -119,25 +154,98 @@ export default function PomodoroTimer() {
           <ArrowLeft className="w-5 h-5" />
         </Button>
         <span className="text-sm font-medium text-muted-foreground">Pomodoro</span>
-        <div className="w-10" />
+        {hasStarted && !isRunning && (
+          <Dialog open={showSettings} onOpenChange={setShowSettings}>
+            <DialogTrigger asChild>
+              <Button variant="ghost" size="icon" data-testid="button-settings">
+                <Settings className="w-5 h-5" />
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Pomodoro Settings</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-6">
+                <div>
+                  <h4 className="text-sm font-medium mb-2">Focus Duration</h4>
+                  <div className="flex gap-2">
+                    {[15, 25, 45, 60].map((mins) => (
+                      <Button
+                        key={mins}
+                        variant={focusDuration === mins ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setFocusDuration(mins)}
+                        data-testid={`button-focus-${mins}`}
+                      >
+                        {mins}m
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium mb-2">Break Duration</h4>
+                  <div className="flex gap-2">
+                    {[5, 10, 15].map((mins) => (
+                      <Button
+                        key={mins}
+                        variant={breakDuration === mins ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setBreakDuration(mins)}
+                        data-testid={`button-break-${mins}`}
+                      >
+                        {mins}m
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium mb-2">Long Break Duration</h4>
+                  <div className="flex gap-2">
+                    {[15, 20, 30].map((mins) => (
+                      <Button
+                        key={mins}
+                        variant={longBreakDuration === mins ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setLongBreakDuration(mins)}
+                        data-testid={`button-longbreak-${mins}`}
+                      >
+                        {mins}m
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+                <Button onClick={() => setShowSettings(false)} className="w-full">
+                  Save Settings
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
+        {!hasStarted && <div className="w-10" />}
       </div>
 
       <div className="flex-1 flex flex-col items-center justify-center px-4 gap-12">
-        <div className="text-center space-y-6">
-          <PomodoroIndicator totalCycles={4} currentCycle={cycle} />
-          
-          <p className="text-sm text-muted-foreground font-medium">
-            {getModeLabel()}
-          </p>
-          
-          <TimerDisplay minutes={minutes} seconds={seconds} />
-        </div>
+        {!hasStarted ? (
+          <DurationSelector onSelect={handleDurationSelect} defaultMinutes={25} type="focus" />
+        ) : (
+          <>
+            <div className="text-center space-y-6">
+              <PomodoroIndicator totalCycles={4} currentCycle={cycle} />
+              
+              <p className="text-sm text-muted-foreground font-medium">
+                {getModeLabel()}
+              </p>
+              
+              <TimerDisplay minutes={minutes} seconds={seconds} />
+            </div>
 
-        <TimerControls
-          isRunning={isRunning}
-          onPlayPause={toggleTimer}
-          onEnd={handleEnd}
-        />
+            <TimerControls
+              isRunning={isRunning}
+              onPlayPause={toggleTimer}
+              onEnd={handleEnd}
+            />
+          </>
+        )}
       </div>
 
       {sessionResult && (

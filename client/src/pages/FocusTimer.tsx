@@ -1,17 +1,22 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import TimerDisplay from "@/components/TimerDisplay";
 import TimerControls from "@/components/TimerControls";
 import SessionCompleteModal from "@/components/SessionCompleteModal";
+import DurationSelector from "@/components/DurationSelector";
 import { useTimer } from "@/hooks/useTimer";
 import { useGameState } from "@/hooks/useGameState";
 import { getRandomMessage } from "@/lib/achievements";
 
 export default function FocusTimer() {
   const [, setLocation] = useLocation();
-  const { minutes, seconds, isRunning, toggleTimer, end } = useTimer(25, "focus_timer_state");
+  const [selectedDuration, setSelectedDuration] = useState<number | null>(null);
+  const [hasStarted, setHasStarted] = useState(false);
+  
+  const duration = selectedDuration || 25;
+  const { minutes, seconds, isRunning, toggleTimer, end, reset } = useTimer(duration, "focus_timer_state");
   const { completeSession } = useGameState();
   const [showModal, setShowModal] = useState(false);
   const [sessionResult, setSessionResult] = useState<{
@@ -20,6 +25,24 @@ export default function FocusTimer() {
     leveledUp: boolean;
     newLevel?: number;
   } | null>(null);
+
+  // Check if timer has been started
+  useEffect(() => {
+    const saved = localStorage.getItem("focus_timer_state");
+    if (saved) {
+      setHasStarted(true);
+      const state = JSON.parse(saved);
+      if (state.initialDuration) {
+        setSelectedDuration(state.initialDuration / 60);
+      }
+    }
+  }, []);
+
+  const handleDurationSelect = (mins: number) => {
+    setSelectedDuration(mins);
+    setHasStarted(true);
+    reset(mins);
+  };
 
   const handleEnd = () => {
     const minutesCompleted = end();
@@ -45,6 +68,9 @@ export default function FocusTimer() {
 
   const handleModalClose = () => {
     setShowModal(false);
+    setHasStarted(false);
+    setSelectedDuration(null);
+    localStorage.removeItem("focus_timer_state");
     setLocation("/");
   };
 
@@ -64,18 +90,24 @@ export default function FocusTimer() {
       </div>
 
       <div className="flex-1 flex flex-col items-center justify-center px-4 gap-12">
-        <div className="text-center">
-          <p className="text-sm text-muted-foreground mb-4 font-medium">
-            {isRunning ? "Focus Time" : "Ready to focus?"}
-          </p>
-          <TimerDisplay minutes={minutes} seconds={seconds} />
-        </div>
+        {!hasStarted ? (
+          <DurationSelector onSelect={handleDurationSelect} defaultMinutes={25} type="focus" />
+        ) : (
+          <>
+            <div className="text-center">
+              <p className="text-sm text-muted-foreground mb-4 font-medium">
+                {isRunning ? "Focus Time" : "Ready to focus?"}
+              </p>
+              <TimerDisplay minutes={minutes} seconds={seconds} />
+            </div>
 
-        <TimerControls
-          isRunning={isRunning}
-          onPlayPause={toggleTimer}
-          onEnd={handleEnd}
-        />
+            <TimerControls
+              isRunning={isRunning}
+              onPlayPause={toggleTimer}
+              onEnd={handleEnd}
+            />
+          </>
+        )}
       </div>
 
       {sessionResult && (
