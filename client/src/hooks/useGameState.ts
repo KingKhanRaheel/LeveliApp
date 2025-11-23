@@ -31,9 +31,7 @@ const DEFAULT_PROGRESS: UserProgress = {
 };
 
 export function useGameState() {
-  const [progress, setProgress] = useState<UserProgress>(DEFAULT_PROGRESS);
-
-  useEffect(() => {
+  const [progress, setProgress] = useState<UserProgress>(() => {
     const saved = localStorage.getItem("focusgate_progress");
     if (saved) {
       const parsed = JSON.parse(saved);
@@ -41,16 +39,45 @@ export function useGameState() {
       const today = new Date().toDateString();
       if (parsed.lastActiveDate !== today) {
         const yesterday = new Date(Date.now() - 86400000).toDateString();
-        // Only reset streak if more than one day has passed
         const streakDays = parsed.lastActiveDate === yesterday 
           ? parsed.streakDays 
           : 0;
         
-        setProgress({ ...parsed, streakDays });
-      } else {
-        setProgress(parsed);
+        return { ...parsed, streakDays };
       }
+      return parsed;
     }
+    return DEFAULT_PROGRESS;
+  });
+  
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  useEffect(() => {
+    const handleProgressUpdate = () => {
+      const saved = localStorage.getItem("focusgate_progress");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        const today = new Date().toDateString();
+        
+        if (parsed.lastActiveDate !== today) {
+          const yesterday = new Date(Date.now() - 86400000).toDateString();
+          const streakDays = parsed.lastActiveDate === yesterday 
+            ? parsed.streakDays 
+            : 0;
+          setProgress({ ...parsed, streakDays });
+        } else {
+          setProgress(parsed);
+        }
+      }
+    };
+
+    window.addEventListener("progressUpdated", handleProgressUpdate);
+    document.addEventListener("visibilitychange", handleProgressUpdate);
+
+    return () => {
+      window.removeEventListener("progressUpdated", handleProgressUpdate);
+      document.removeEventListener("visibilitychange", handleProgressUpdate);
+    };
   }, []);
 
   useEffect(() => {
@@ -101,10 +128,16 @@ export function useGameState() {
       .filter(a => !newProgress.achievements.includes(a.id) && a.condition(stats))
       .map(a => a.id);
 
-    setProgress({
+    const finalProgress = {
       ...newProgress,
       achievements: [...newProgress.achievements, ...newAchievements]
-    });
+    };
+    
+    setProgress(finalProgress);
+    
+    // Save immediately and notify other instances
+    localStorage.setItem("focusgate_progress", JSON.stringify(finalProgress));
+    window.dispatchEvent(new Event("progressUpdated"));
 
     return { xpGained, leveledUp, newLevel };
   };
