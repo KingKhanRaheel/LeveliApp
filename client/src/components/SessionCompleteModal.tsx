@@ -1,6 +1,7 @@
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -31,6 +32,9 @@ export default function SessionCompleteModal({
           <DialogTitle className="text-center text-2xl font-display">
             {leveledUp ? '🎉 Level Up!' : '✨ Session Complete'}
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            Session completion summary with XP gained and level progress
+          </DialogDescription>
         </DialogHeader>
         
         <div className="space-y-6 py-4">

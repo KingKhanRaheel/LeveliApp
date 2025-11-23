@@ -14,17 +14,27 @@ type PomodoroMode = "focus" | "break" | "longBreak";
 
 export default function PomodoroTimer() {
   const [, setLocation] = useLocation();
-  const [mode, setMode] = useState<PomodoroMode>("focus");
-  const [cycle, setCycle] = useState(0);
-  const [completedMinutes, setCompletedMinutes] = useState(0);
+  
+  // Load saved Pomodoro state
+  const savedState = localStorage.getItem("pomodoro_state");
+  const initialState = savedState ? JSON.parse(savedState) : { mode: "focus", cycle: 0, completedMinutes: 0 };
+  
+  const [mode, setMode] = useState<PomodoroMode>(initialState.mode);
+  const [cycle, setCycle] = useState(initialState.cycle);
+  const [completedMinutes, setCompletedMinutes] = useState(initialState.completedMinutes);
   
   const focusDuration = 25;
   const breakDuration = 5;
   const longBreakDuration = 15;
   
   const initialDuration = mode === "focus" ? focusDuration : mode === "break" ? breakDuration : longBreakDuration;
-  const { minutes, seconds, isRunning, toggleTimer, reset, end, totalSeconds } = useTimer(initialDuration);
+  const { minutes, seconds, isRunning, toggleTimer, reset, end, totalSeconds } = useTimer(initialDuration, "pomodoro_timer_state");
   const { completeSession } = useGameState();
+  
+  // Save Pomodoro state
+  useEffect(() => {
+    localStorage.setItem("pomodoro_state", JSON.stringify({ mode, cycle, completedMinutes }));
+  }, [mode, cycle, completedMinutes]);
   
   const [showModal, setShowModal] = useState(false);
   const [sessionResult, setSessionResult] = useState<{
@@ -36,7 +46,7 @@ export default function PomodoroTimer() {
 
   useEffect(() => {
     if (totalSeconds === 0 && mode === "focus") {
-      setCompletedMinutes(prev => prev + focusDuration);
+      setCompletedMinutes((prev: number) => prev + focusDuration);
       
       if (cycle === 3) {
         setMode("longBreak");
@@ -57,6 +67,7 @@ export default function PomodoroTimer() {
     const minutesDone = end();
     const totalCompleted = completedMinutes + (mode === "focus" ? minutesDone : 0);
     
+    // Always show modal
     if (totalCompleted > 0) {
       const pomodoroBonus = cycle > 0;
       const result = completeSession(totalCompleted, "pomodoro", pomodoroBonus);
@@ -66,15 +77,28 @@ export default function PomodoroTimer() {
         leveledUp: result.leveledUp,
         newLevel: result.newLevel
       });
-      setShowModal(true);
     } else {
-      setLocation("/");
+      setSessionResult({
+        xpGained: 0,
+        message: "too short, try again",
+        leveledUp: false
+      });
     }
+    setShowModal(true);
+    
+    // Clear pomodoro state
+    localStorage.removeItem("pomodoro_state");
   };
 
   const handleModalClose = () => {
     setShowModal(false);
     setLocation("/");
+    
+    // Reset state
+    setMode("focus");
+    setCycle(0);
+    setCompletedMinutes(0);
+    localStorage.removeItem("pomodoro_state");
   };
 
   const getModeLabel = () => {

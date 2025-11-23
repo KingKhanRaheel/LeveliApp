@@ -41,11 +41,12 @@ export function useGameState() {
       const today = new Date().toDateString();
       if (parsed.lastActiveDate !== today) {
         const yesterday = new Date(Date.now() - 86400000).toDateString();
+        // Only reset streak if more than one day has passed
         const streakDays = parsed.lastActiveDate === yesterday 
           ? parsed.streakDays 
           : 0;
         
-        setProgress({ ...parsed, lastActiveDate: today, streakDays });
+        setProgress({ ...parsed, streakDays });
       } else {
         setProgress(parsed);
       }

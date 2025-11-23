@@ -11,7 +11,7 @@ import { getRandomMessage } from "@/lib/achievements";
 
 export default function FocusTimer() {
   const [, setLocation] = useLocation();
-  const { minutes, seconds, isRunning, toggleTimer, end } = useTimer(25);
+  const { minutes, seconds, isRunning, toggleTimer, end } = useTimer(25, "focus_timer_state");
   const { completeSession } = useGameState();
   const [showModal, setShowModal] = useState(false);
   const [sessionResult, setSessionResult] = useState<{
@@ -23,6 +23,8 @@ export default function FocusTimer() {
 
   const handleEnd = () => {
     const minutesCompleted = end();
+    
+    // Always show modal, even for 0 minutes
     if (minutesCompleted > 0) {
       const result = completeSession(minutesCompleted, "focus");
       setSessionResult({
@@ -31,10 +33,14 @@ export default function FocusTimer() {
         leveledUp: result.leveledUp,
         newLevel: result.newLevel
       });
-      setShowModal(true);
     } else {
-      setLocation("/");
+      setSessionResult({
+        xpGained: 0,
+        message: "too short, try again",
+        leveledUp: false
+      });
     }
+    setShowModal(true);
   };
 
   const handleModalClose = () => {
