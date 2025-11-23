@@ -9,11 +9,23 @@ import DurationSelector from "@/components/DurationSelector";
 import { useTimer } from "@/hooks/useTimer";
 import { useGameState } from "@/hooks/useGameState";
 import { getRandomMessage } from "@/lib/achievements";
+import { motion, AnimatePresence } from "framer-motion";
+
+// Motivational messages that rotate during focus
+const MOTIVATIONAL_MESSAGES = [
+  "Brain cells activated",
+  "No scrolling. Stay locked.",
+  "Future you will thank you.",
+  "Focus mode engaged",
+  "You're doing great",
+  "Deep work in progress"
+];
 
 export default function FocusTimer() {
   const [, setLocation] = useLocation();
   const [selectedDuration, setSelectedDuration] = useState<number | null>(null);
   const [hasStarted, setHasStarted] = useState(false);
+  const [messageIndex, setMessageIndex] = useState(0);
   
   const duration = selectedDuration || 25;
   const { minutes, seconds, isRunning, toggleTimer, end, reset } = useTimer(duration, "focus_timer_state");
@@ -25,6 +37,19 @@ export default function FocusTimer() {
     leveledUp: boolean;
     newLevel?: number;
   } | null>(null);
+
+  // Rotate motivational messages during countdown
+  useEffect(() => {
+    if (isRunning) {
+      const interval = setInterval(() => {
+        setMessageIndex((prev) => (prev + 1) % MOTIVATIONAL_MESSAGES.length);
+      }, 8000); // Change message every 8 seconds
+      return () => clearInterval(interval);
+    } else {
+      // Reset message index when timer stops
+      setMessageIndex(0);
+    }
+  }, [isRunning]);
 
   // Check if timer has been started
   useEffect(() => {
@@ -94,10 +119,25 @@ export default function FocusTimer() {
           <DurationSelector onSelect={handleDurationSelect} defaultMinutes={25} type="focus" />
         ) : (
           <>
-            <div className="text-center">
-              <p className="text-sm text-muted-foreground mb-4 font-medium">
-                {isRunning ? "Focus Time" : "Ready to focus?"}
-              </p>
+            <div className="text-center space-y-6">
+              <AnimatePresence mode="wait">
+                {isRunning ? (
+                  <motion.p
+                    key={messageIndex}
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    transition={{ duration: 0.5 }}
+                    className="text-sm text-primary font-bold mb-4"
+                  >
+                    {MOTIVATIONAL_MESSAGES[messageIndex]}
+                  </motion.p>
+                ) : (
+                  <p className="text-sm text-muted-foreground mb-4 font-semibold">
+                    Ready to focus?
+                  </p>
+                )}
+              </AnimatePresence>
               <TimerDisplay minutes={minutes} seconds={seconds} />
             </div>
 

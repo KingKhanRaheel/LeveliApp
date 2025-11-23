@@ -30,11 +30,11 @@ export default function ActionCard({ icon: Icon, label, description, onClick }: 
         </div>
         
         <div className="text-center">
-          <h3 className="font-display font-semibold text-xl bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text">
+          <h3 className="font-display font-bold text-xl bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text">
             {label}
           </h3>
           {description && (
-            <p className="text-sm text-muted-foreground mt-1">{description}</p>
+            <p className="text-xs text-muted-foreground/80 mt-1.5">{description}</p>
           )}
         </div>
 

@@ -73,12 +73,24 @@ export default function Home() {
           </div>
         </motion.div>
 
-        <motion.div variants={item} className="space-y-4">
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-            <Zap className="w-4 h-4" />
-            Start grinding
+        <motion.div variants={item} className="space-y-6">
+          {/* Quick Start Button */}
+          <button
+            onClick={() => setLocation("/focus")}
+            data-testid="button-quick-start"
+            className="w-full p-6 rounded-2xl bg-gradient-to-r from-primary to-purple-600 border border-primary-border text-primary-foreground font-bold text-lg shadow-lg hover-elevate active-elevate-2"
+          >
+            <div className="flex items-center justify-center gap-3">
+              <Zap className="w-6 h-6 fill-current" />
+              Quick 25 min session
+            </div>
+          </button>
+
+          <h2 className="text-base font-medium text-foreground flex items-center gap-2">
+            <Timer className="w-4 h-4" />
+            Or choose your mode
           </h2>
-          <div className="space-y-3">
+          <div className="space-y-4">
             <ActionCard
               icon={Timer}
               label="Focus Timer"

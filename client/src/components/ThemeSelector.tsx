@@ -82,7 +82,7 @@ export default function ThemeSelector() {
                     ? "border-primary bg-primary/5"
                     : unlocked
                     ? "border-card-border hover:border-primary/30 hover:bg-card/50"
-                    : "border-card-border bg-muted/30 opacity-60 cursor-not-allowed"
+                    : "border-card-border bg-muted/40 cursor-not-allowed"
                 }`}
                 whileHover={unlocked ? { scale: 1.05 } : {}}
                 whileTap={unlocked ? { scale: 0.95 } : {}}
@@ -90,29 +90,29 @@ export default function ThemeSelector() {
               >
                 {isSelected && (
                   <div className="absolute top-2 right-2">
-                    <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center">
-                      <Check className="w-3 h-3 text-primary-foreground" />
+                    <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
+                      <Check className="w-4 h-4 text-primary-foreground" />
                     </div>
                   </div>
                 )}
                 
                 {!unlocked && (
-                  <div className="absolute top-2 right-2">
-                    <Lock className="w-4 h-4 text-muted-foreground" />
+                  <div className="absolute top-2 left-2">
+                    <Lock className="w-5 h-5 text-muted-foreground" />
                   </div>
                 )}
                 
                 <div className="text-center space-y-2">
                   <div className="text-3xl">{theme.icon}</div>
                   <div>
-                    <h4 className="font-semibold text-sm">{theme.name}</h4>
-                    <p className="text-xs text-muted-foreground mt-1">
+                    <h4 className="font-bold text-sm">{theme.name}</h4>
+                    <p className="text-xs text-muted-foreground/70 mt-1">
                       {theme.description}
                     </p>
                   </div>
                   
                   {theme.unlockRequirement && theme.unlockRequirement.type !== "free" && (
-                    <Badge variant={unlocked ? "default" : "secondary"} className="text-xs">
+                    <Badge variant={unlocked ? "default" : "secondary"} className="text-xs font-semibold">
                       {unlocked ? "Unlocked" : getUnlockText(theme)}
                     </Badge>
                   )}
@@ -122,9 +122,12 @@ export default function ThemeSelector() {
           })}
         </div>
         
-        <div className="mt-4 p-4 bg-muted/30 rounded-xl">
-          <p className="text-xs text-muted-foreground text-center">
+        <div className="mt-4 p-4 bg-gradient-to-r from-primary/10 to-purple-500/10 rounded-xl border border-primary/20">
+          <p className="text-sm text-foreground font-bold text-center">
             Unlock more themes by completing achievements and leveling up
+          </p>
+          <p className="text-xs text-muted-foreground text-center mt-1">
+            Current level: {stats.level} • Achievements: {stats.achievements.length}
           </p>
         </div>
       </DialogContent>
