@@ -1,0 +1,117 @@
+Make the following improvements across the app:
+
+1. Typography Hierarchy
+
+Add clear visual hierarchy using font weights and sizes.
+
+Page titles should be large + bold.
+
+Section labels medium weight.
+
+Descriptions lighter and smaller.
+
+Buttons should use bold text.
+
+2. Spacing Improvements
+
+Add more vertical spacing between unrelated elements (12–18px).
+
+Each section should feel like a “block” with breathing room.
+
+3. XP Bar Upgrade
+
+Add animation when XP increases.
+
+Consider a segmented progress style (like RPG leveling).
+
+Add a dynamic message under the XP bar, e.g. “98 XP left to Level 2 – keep going.”
+
+4. Streak Badge Enhancement
+
+Animate streak increment for ~600–800ms when updated.
+
+Add dynamic emojis based on streak length (example rules below):
+
+Day 1 → 🔥
+
+Day 3 → ⚔️🔥
+
+Day 7+ → 💀🔥
+
+5. Timer Page Improvements
+
+During countdown, rotate motivational messages from a small preset list.
+
+Examples:
+
+“Brain cells activated 🧠⚡”
+
+“No scrolling. Stay locked.”
+
+“Future you will thank you.”
+
+6. Session Completion Screen
+
+After ending a timer or completing a Pomodoro cycle, show a modal with:
+
+XP gained
+
+Streak status
+
+A short playful message
+
+Add a subtle celebratory animation (pulse, glow, or particles).
+
+7. Quick Start Button
+
+On home screen, add a “Quick 25 min session” button above or below the main cards.
+
+8. Feedback Animations on UI Interaction
+
+Add micro-animations to buttons and timers (scale 1.03 tap feedback).
+
+Apply a subtle glow pulse on hover/focus states.
+
+9. Stats Page Meaningful Feedback
+
+Instead of just numbers, add contextual insights.
+
+Example messages:
+
+“You improved 40% compared to last week. W.”
+
+“Sunday was quiet. Fix or accept.”
+
+10. Theme Unlock Clarity
+
+For locked themes, show clear requirements (e.g., “Unlock at Level 5”) with better visibility.
+
+General Tone & Branding Notes:
+
+Tone should feel slightly sarcastic, friendly, and Gen-Z coded.
+
+Avoid corporate language.
+
+Keep interactions feeling fun and rewarding.
+
+Do NOT change:
+
+Core navigation structure
+
+Core functionality
+
+Existing screens
+
+Color palette and general theme direction
+
+Deliverables:
+
+Updated UI components with polished layout.
+
+Updated animations and microcopy.
+
+Clean commit (no breaking changes).
+
+Code comments where logic is added (XP animations, streak dynamic emojis, etc.).
+
+When done, summarize what changed and what code files were touched.
