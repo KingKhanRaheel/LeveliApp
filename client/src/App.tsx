@@ -10,6 +10,7 @@ import Stats from "@/pages/Stats";
 import Achievements from "@/pages/Achievements";
 import BottomNav from "@/components/BottomNav";
 import NotFound from "@/pages/not-found";
+import { useTheme } from "@/hooks/useTheme";
 
 function Router() {
   return (
@@ -25,6 +26,8 @@ function Router() {
 }
 
 function App() {
+  useTheme();
+  
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>

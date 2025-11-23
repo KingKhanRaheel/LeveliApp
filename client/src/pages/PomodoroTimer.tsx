@@ -7,6 +7,7 @@ import TimerControls from "@/components/TimerControls";
 import PomodoroIndicator from "@/components/PomodoroIndicator";
 import SessionCompleteModal from "@/components/SessionCompleteModal";
 import DurationSelector from "@/components/DurationSelector";
+import BubbleTimer from "@/components/BubbleTimer";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useTimer } from "@/hooks/useTimer";
 import { useGameState } from "@/hooks/useGameState";
@@ -229,14 +230,20 @@ export default function PomodoroTimer() {
           <DurationSelector onSelect={handleDurationSelect} defaultMinutes={25} type="focus" />
         ) : (
           <>
-            <div className="text-center space-y-6">
-              <PomodoroIndicator totalCycles={4} currentCycle={cycle} />
+            <div className="text-center space-y-8">
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground font-medium">
+                  {getModeLabel()}
+                </p>
+                <PomodoroIndicator totalCycles={4} currentCycle={cycle} />
+              </div>
               
-              <p className="text-sm text-muted-foreground font-medium">
-                {getModeLabel()}
-              </p>
-              
-              <TimerDisplay minutes={minutes} seconds={seconds} />
+              <BubbleTimer
+                totalSeconds={initialDuration * 60}
+                remainingSeconds={totalSeconds}
+                mode={mode}
+                isRunning={isRunning}
+              />
             </div>
 
             <TimerControls
