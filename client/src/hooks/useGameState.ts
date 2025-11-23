@@ -14,7 +14,9 @@ interface UserProgress {
   level: number;
   streakDays: number;
   achievements: string[];
-  lastActiveDate: string;
+  lastActiveDate: string; // Keep for backward compatibility
+  lastSessionTimestamp: number; // New: actual timestamp for 24-hour tracking
+  lastStreakIncrementTimestamp: number; // New: when we last incremented the streak
   sessions: Session[];
   pomodorosCompleted: number;
 }
@@ -26,6 +28,8 @@ const DEFAULT_PROGRESS: UserProgress = {
   streakDays: 0,
   achievements: [],
   lastActiveDate: new Date().toDateString(),
+  lastSessionTimestamp: 0,
+  lastStreakIncrementTimestamp: 0,
   sessions: [],
   pomodorosCompleted: 0
 };
@@ -36,15 +40,29 @@ export function useGameState() {
     if (saved) {
       const parsed = JSON.parse(saved);
       
-      const today = new Date().toDateString();
-      if (parsed.lastActiveDate !== today) {
-        const yesterday = new Date(Date.now() - 86400000).toDateString();
-        const streakDays = parsed.lastActiveDate === yesterday 
-          ? parsed.streakDays 
+      // Migrate old data to new format
+      if (!parsed.lastSessionTimestamp) {
+        parsed.lastSessionTimestamp = parsed.sessions?.length > 0 
+          ? parsed.sessions[parsed.sessions.length - 1].timestamp 
           : 0;
-        
-        return { ...parsed, streakDays };
       }
+      if (!parsed.lastStreakIncrementTimestamp) {
+        parsed.lastStreakIncrementTimestamp = parsed.lastSessionTimestamp;
+      }
+      
+      // Check if streak should be reset (no activity in last 24 hours)
+      const now = Date.now();
+      const timeSinceLastSession = now - parsed.lastSessionTimestamp;
+      const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
+      
+      if (parsed.lastSessionTimestamp > 0 && timeSinceLastSession > TWENTY_FOUR_HOURS) {
+        // Reset streak if more than 24 hours since last session
+        const resetData = { ...parsed, streakDays: 0, lastStreakIncrementTimestamp: 0 };
+        // Persist the reset immediately
+        localStorage.setItem("focusgate_progress", JSON.stringify(resetData));
+        return resetData;
+      }
+      
       return parsed;
     }
     return DEFAULT_PROGRESS;
@@ -57,14 +75,26 @@ export function useGameState() {
       const saved = localStorage.getItem("focusgate_progress");
       if (saved) {
         const parsed = JSON.parse(saved);
-        const today = new Date().toDateString();
         
-        if (parsed.lastActiveDate !== today) {
-          const yesterday = new Date(Date.now() - 86400000).toDateString();
-          const streakDays = parsed.lastActiveDate === yesterday 
-            ? parsed.streakDays 
+        // Migrate old data
+        if (!parsed.lastSessionTimestamp) {
+          parsed.lastSessionTimestamp = parsed.sessions?.length > 0 
+            ? parsed.sessions[parsed.sessions.length - 1].timestamp 
             : 0;
-          setProgress({ ...parsed, streakDays });
+        }
+        if (!parsed.lastStreakIncrementTimestamp) {
+          parsed.lastStreakIncrementTimestamp = parsed.lastSessionTimestamp;
+        }
+        
+        // Check if streak should be reset
+        const now = Date.now();
+        const timeSinceLastSession = now - parsed.lastSessionTimestamp;
+        const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
+        
+        if (parsed.lastSessionTimestamp > 0 && timeSinceLastSession > TWENTY_FOUR_HOURS) {
+          const resetData = { ...parsed, streakDays: 0, lastStreakIncrementTimestamp: 0 };
+          localStorage.setItem("focusgate_progress", JSON.stringify(resetData));
+          setProgress(resetData);
         } else {
           setProgress(parsed);
         }
@@ -90,17 +120,40 @@ export function useGameState() {
     const newLevel = calculateLevel(newXP);
     const leveledUp = newLevel > progress.level;
 
+    const now = Date.now();
     const session: Session = {
-      id: Date.now().toString(),
-      timestamp: Date.now(),
+      id: now.toString(),
+      timestamp: now,
       minutes,
       type
     };
 
-    const today = new Date().toDateString();
-    const isNewDay = progress.lastActiveDate !== today;
-    const newStreakDays = isNewDay ? progress.streakDays + 1 : progress.streakDays;
+    // 24-hour streak logic
+    const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
+    const timeSinceLastSession = now - progress.lastSessionTimestamp;
+    const timeSinceLastStreak = now - progress.lastStreakIncrementTimestamp;
+    
+    let newStreakDays = progress.streakDays;
+    let newStreakIncrementTimestamp = progress.lastStreakIncrementTimestamp;
+    
+    // First session ever or streak was reset
+    if (progress.streakDays === 0) {
+      newStreakDays = 1;
+      newStreakIncrementTimestamp = now;
+    }
+    // Been more than 24 hours since last session - reset streak
+    else if (timeSinceLastSession > TWENTY_FOUR_HOURS) {
+      newStreakDays = 1;
+      newStreakIncrementTimestamp = now;
+    }
+    // Been more than 24 hours since last streak increment - increment streak
+    else if (timeSinceLastStreak >= TWENTY_FOUR_HOURS) {
+      newStreakDays = progress.streakDays + 1;
+      newStreakIncrementTimestamp = now;
+    }
+    // Otherwise maintain current streak (session within same 24-hour period)
 
+    const today = new Date().toDateString();
     const dailyMinutes = progress.sessions
       .filter(s => new Date(s.timestamp).toDateString() === today)
       .reduce((sum, s) => sum + s.minutes, 0) + minutes;
@@ -112,6 +165,8 @@ export function useGameState() {
       level: newLevel,
       streakDays: newStreakDays,
       lastActiveDate: today,
+      lastSessionTimestamp: now,
+      lastStreakIncrementTimestamp: newStreakIncrementTimestamp,
       sessions: [...progress.sessions, session],
       pomodorosCompleted: progress.pomodorosCompleted + (pomodoroBonus ? 1 : 0)
     };
@@ -139,7 +194,13 @@ export function useGameState() {
     localStorage.setItem("focusgate_progress", JSON.stringify(finalProgress));
     window.dispatchEvent(new Event("progressUpdated"));
 
-    return { xpGained, leveledUp, newLevel };
+    // Store newly unlocked achievements for later display
+    if (newAchievements.length > 0) {
+      const pending = JSON.parse(sessionStorage.getItem("pending_achievements") || "[]");
+      sessionStorage.setItem("pending_achievements", JSON.stringify([...pending, ...newAchievements]));
+    }
+
+    return { xpGained, leveledUp, newLevel, newAchievements };
   };
 
   const getStats = () => {

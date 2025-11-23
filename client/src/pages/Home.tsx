@@ -1,18 +1,40 @@
 import { useLocation } from "wouter";
 import { Timer, Clock, Sparkles, Zap } from "lucide-react";
 import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
 import LevelBadge from "@/components/LevelBadge";
 import XPProgressBar from "@/components/XPProgressBar";
 import StreakCounter from "@/components/StreakCounter";
 import ActionCard from "@/components/ActionCard";
 import ThemeToggle from "@/components/ThemeToggle";
 import ThemeSelector from "@/components/ThemeSelector";
+import AchievementUnlockModal from "@/components/AchievementUnlockModal";
 import { useGameState } from "@/hooks/useGameState";
+import { soundManager } from "@/lib/sounds";
 
 export default function Home() {
   const [, setLocation] = useLocation();
   const { getStats } = useGameState();
   const stats = getStats();
+  
+  const [pendingAchievements, setPendingAchievements] = useState<string[]>([]);
+  const [showXPAnimation, setShowXPAnimation] = useState(false);
+
+  // Check for pending achievements when page loads
+  useEffect(() => {
+    const pending = sessionStorage.getItem("pending_achievements");
+    if (pending) {
+      const achievements = JSON.parse(pending);
+      if (achievements.length > 0) {
+        setPendingAchievements(achievements);
+        sessionStorage.removeItem("pending_achievements");
+      }
+    }
+    
+    // Trigger XP animation when returning to home
+    setShowXPAnimation(true);
+    soundManager.resumeContext();
+  }, []);
 
   const container = {
     hidden: { opacity: 0 },
@@ -66,6 +88,7 @@ export default function Home() {
                 xpForNextLevel={stats.xpForNextLevel}
                 currentLevel={stats.level}
                 nextLevel={stats.level + 1}
+                animate={showXPAnimation}
               />
             </div>
 
@@ -108,6 +131,14 @@ export default function Home() {
       </motion.div>
 
       <div className="fixed bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background via-background/80 to-transparent pointer-events-none" />
+      
+      {/* Achievement unlock modal */}
+      {pendingAchievements.length > 0 && (
+        <AchievementUnlockModal
+          achievementIds={pendingAchievements}
+          onClose={() => setPendingAchievements([])}
+        />
+      )}
     </div>
   );
 }

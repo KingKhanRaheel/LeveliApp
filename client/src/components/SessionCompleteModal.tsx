@@ -8,7 +8,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Sparkles, Trophy, Zap, Flame } from "lucide-react";
 import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
 import { useGameState } from "@/hooks/useGameState";
+import { soundManager } from "@/lib/sounds";
 
 interface SessionCompleteModalProps {
   open: boolean;
@@ -29,6 +31,22 @@ export default function SessionCompleteModal({
 }: SessionCompleteModalProps) {
   const { getStats } = useGameState();
   const stats = getStats();
+  const [hasPlayedSound, setHasPlayedSound] = useState(false);
+
+  // Play sounds when modal opens
+  useEffect(() => {
+    if (open && !hasPlayedSound) {
+      soundManager.resumeContext();
+      if (leveledUp) {
+        soundManager.playLevelUp();
+      } else {
+        soundManager.playXPGain();
+      }
+      setHasPlayedSound(true);
+    } else if (!open) {
+      setHasPlayedSound(false);
+    }
+  }, [open, leveledUp, hasPlayedSound]);
 
   return (
     <Dialog open={open} onOpenChange={onClose}>

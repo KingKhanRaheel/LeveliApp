@@ -1,17 +1,44 @@
 import { Progress } from "@/components/ui/progress";
-import { motion } from "framer-motion";
-import { useMemo } from "react";
+import { motion, useMotionValue, animate, useTransform } from "framer-motion";
+import { useMemo, useEffect, useState } from "react";
 
 interface XPProgressBarProps {
   currentXP: number;
   xpForNextLevel: number;
   currentLevel: number;
   nextLevel: number;
+  animate?: boolean;
 }
 
-export default function XPProgressBar({ currentXP, xpForNextLevel, currentLevel, nextLevel }: XPProgressBarProps) {
+export default function XPProgressBar({ currentXP, xpForNextLevel, currentLevel, nextLevel, animate: shouldAnimate = false }: XPProgressBarProps) {
   const progress = (currentXP / xpForNextLevel) * 100;
   const xpRemaining = xpForNextLevel - currentXP;
+  const animatedProgress = useMotionValue(progress);
+  const [currentProgress, setCurrentProgress] = useState(progress);
+
+  // Animate progress bar when shouldAnimate is true
+  useEffect(() => {
+    if (shouldAnimate) {
+      // Start from 0 and animate to current progress
+      animatedProgress.set(0);
+      const controls = animate(animatedProgress, progress, {
+        duration: 1.5,
+        ease: "easeOut"
+      });
+      
+      // Subscribe to motion value changes
+      const unsubscribe = animatedProgress.on("change", (latest) => {
+        setCurrentProgress(latest);
+      });
+      
+      return () => {
+        controls.stop();
+        unsubscribe();
+      };
+    } else {
+      setCurrentProgress(progress);
+    }
+  }, [progress, shouldAnimate, animatedProgress]);
 
   // Dynamic message based on progress
   const dynamicMessage = useMemo(() => {
@@ -30,7 +57,7 @@ export default function XPProgressBar({ currentXP, xpForNextLevel, currentLevel,
       <div className="relative">
         {/* Accessible progress bar with animations */}
         <div className="relative h-4 bg-muted rounded-full overflow-hidden">
-          <Progress value={progress} className="h-4" />
+          <Progress value={currentProgress} className="h-4" />
           {/* Shimmer effect overlay */}
           <motion.div
             className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none"
