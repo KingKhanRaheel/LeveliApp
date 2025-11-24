@@ -66,7 +66,7 @@ export default function PomodoroTimer() {
   
   const initialDuration = mode === "focus" ? focusDuration : mode === "break" ? breakDuration : longBreakDuration;
   const { minutes, seconds, isRunning, toggleTimer, reset, end, totalSeconds } = useTimer(initialDuration, "pomodoro_timer_state");
-  const { completeSession } = useGameState();
+  const { completeSession, deductXP } = useGameState();
 
   // Check if timer has been started
   useEffect(() => {
@@ -135,6 +135,12 @@ export default function PomodoroTimer() {
   }, [totalSeconds, mode, cycle, reset]);
 
   const handleEnd = () => {
+    // In strict mode, show warning about XP loss (only during focus sessions)
+    if (strictMode && isRunning && mode === "focus") {
+      setShowPrematureExitWarning(true);
+      return;
+    }
+
     const minutesDone = end();
     const totalCompleted = completedMinutes + (mode === "focus" ? minutesDone : 0);
     
@@ -235,6 +241,28 @@ export default function PomodoroTimer() {
       document.exitFullscreen();
     }
     setLocation("/");
+  };
+
+  const confirmPrematureExit = () => {
+    setShowPrematureExitWarning(false);
+    const minutesFocused = minutes;
+    end(); // End the timer
+    
+    // Deduct XP from total
+    deductXP(minutesFocused);
+    
+    // Show loss notification
+    const result = {
+      xpGained: 0,
+      message: `Lost ${minutesFocused} XP. Don't fold next time.`,
+      leveledUp: false
+    };
+    
+    setSessionResult(result);
+    setShowModal(true);
+    
+    // Clear pomodoro state
+    localStorage.removeItem("pomodoro_state");
   };
 
   const getModeLabel = () => {
@@ -373,13 +401,26 @@ export default function PomodoroTimer() {
                 />
               </div>
               
-              <Button
-                onClick={() => handleDurationSelect(focusDuration)}
-                className="w-full"
-                size="lg"
-              >
-                Start Pomodoro
-              </Button>
+              <div className="space-y-4">
+                <Button
+                  onClick={() => handleDurationSelect(focusDuration)}
+                  className="w-full"
+                  size="lg"
+                >
+                  Start Pomodoro
+                </Button>
+                <Button
+                  onClick={() => {
+                    setStrictMode(!strictMode);
+                  }}
+                  variant={strictMode ? "default" : "outline"}
+                  className="w-full"
+                  data-testid="button-strict-mode-toggle"
+                >
+                  <Shield className="w-4 h-4 mr-2" />
+                  {strictMode ? "Strict Mode: On" : "Strict Mode: Off"}
+                </Button>
+              </div>
             </div>
           </div>
         ) : (
@@ -450,6 +491,14 @@ export default function PomodoroTimer() {
         open={showExitWarning}
         onConfirm={confirmExit}
         onCancel={() => setShowExitWarning(false)}
+      />
+
+      <StrictModePrematureExitModal
+        open={showPrematureExitWarning}
+        onConfirm={confirmPrematureExit}
+        onCancel={() => setShowPrematureExitWarning(false)}
+        minutesFocused={minutes}
+        xpAtRisk={minutes}
       />
 
       {levelUpData && (
