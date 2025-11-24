@@ -144,86 +144,65 @@ class SoundManager {
   }
 }
 
-// Soothing Ambient Sound Player for focus sessions
+// Nature Sound Player using actual audio files
 class NatureSoundPlayer {
-  private audioContext: AudioContext | null = null;
+  private audioElement: HTMLAudioElement | null = null;
   private isPlaying = false;
-  private oscillators: OscillatorNode[] = [];
-  private gainNodes: GainNode[] = [];
-  private lfoOscillators: OscillatorNode[] = [];
+  private currentSoundIndex = 0;
+  private soundTracks = [
+    '/audio/forest-ambience.mp3',
+    '/audio/rain-forest.mp3'
+  ];
 
-  private getContext() {
-    if (!this.audioContext) {
-      this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+  private initAudio() {
+    if (!this.audioElement) {
+      this.audioElement = new Audio();
+      this.audioElement.loop = true;
+      this.audioElement.volume = 0.3;
     }
-    return this.audioContext;
+    return this.audioElement;
   }
 
   async start() {
     if (this.isPlaying) return;
     
-    const ctx = this.getContext();
-    await ctx.resume();
-    
-    // Create soothing ambient pads with slow modulation
-    const baseFrequencies = [55, 82.5, 110]; // Low A notes (very soothing)
-    
-    baseFrequencies.forEach((freq, i) => {
-      // Main oscillator
-      const osc = ctx.createOscillator();
-      const mainGain = ctx.createGain();
+    try {
+      const audio = this.initAudio();
+      const track = this.soundTracks[this.currentSoundIndex];
+      audio.src = track;
       
-      osc.type = 'sine';
-      osc.frequency.value = freq;
+      // Fade in
+      audio.volume = 0;
+      await audio.play().catch(err => console.log('Audio play error:', err));
       
-      // Start silently and fade in
-      mainGain.gain.value = 0;
-      mainGain.gain.linearRampToValueAtTime(0.08 - i * 0.015, ctx.currentTime + 3);
+      // Smooth fade in
+      const fadeInterval = setInterval(() => {
+        if (audio.volume < 0.3) {
+          audio.volume = Math.min(0.3, audio.volume + 0.05);
+        } else {
+          clearInterval(fadeInterval);
+        }
+      }, 100);
       
-      osc.connect(mainGain);
-      mainGain.connect(ctx.destination);
-      osc.start();
-      
-      this.oscillators.push(osc);
-      this.gainNodes.push(mainGain);
-      
-      // Add slow LFO for gentle volume modulation (breathing effect)
-      const lfo = ctx.createOscillator();
-      const lfoGain = ctx.createGain();
-      
-      lfo.type = 'sine';
-      lfo.frequency.value = 0.15 + i * 0.05; // Very slow: 0.15-0.25 Hz
-      
-      lfoGain.gain.value = 0.02; // Subtle modulation
-      
-      lfo.connect(lfoGain);
-      lfoGain.connect(mainGain.gain);
-      lfo.start();
-      
-      this.lfoOscillators.push(lfo);
-    });
-    
-    this.isPlaying = true;
+      this.isPlaying = true;
+    } catch (err) {
+      console.error('Failed to start nature sounds:', err);
+    }
   }
 
   stop() {
-    if (!this.isPlaying) return;
+    if (!this.isPlaying || !this.audioElement) return;
     
-    const ctx = this.getContext();
-    
-    // Fade out all gains
-    this.gainNodes.forEach(gainNode => {
-      gainNode.gain.linearRampToValueAtTime(0, ctx.currentTime + 2);
-    });
-    
-    setTimeout(() => {
-      this.oscillators.forEach(osc => osc.stop());
-      this.lfoOscillators.forEach(osc => osc.stop());
-      this.oscillators = [];
-      this.gainNodes = [];
-      this.lfoOscillators = [];
-      this.isPlaying = false;
-    }, 2100);
+    // Fade out
+    const fadeOutInterval = setInterval(() => {
+      if (this.audioElement!.volume > 0) {
+        this.audioElement!.volume = Math.max(0, this.audioElement!.volume - 0.05);
+      } else {
+        this.audioElement!.pause();
+        clearInterval(fadeOutInterval);
+        this.isPlaying = false;
+      }
+    }, 100);
   }
 
   toggle() {
