@@ -137,32 +137,38 @@ export default function FocusTimer() {
   };
 
   const handleEnd = () => {
-    // In strict mode, show warning about XP loss
+    // Wrap It button: End the current focus session
+    // In strict mode, show warning about XP loss before ending
     if (strictMode && isRunning) {
       setShowPrematureExitWarning(true);
       return;
     }
 
+    // End the timer and get minutes completed
     const minutesCompleted = end();
     
-    // Send notification
+    // Send completion notification to user
     if ("Notification" in window && Notification.permission === "granted") {
-      new Notification("Focus Session Complete!", {
-        body: `You focused for ${minutesCompleted} minutes. Nice work!`,
-        icon: "/favicon.png"
-      });
+      try {
+        new Notification("Focus Session Complete!", {
+          body: `You focused for ${minutesCompleted} minutes. Nice work!`,
+          icon: "/favicon.png"
+        });
+      } catch (error) {
+        console.log("Notification failed:", error);
+      }
     }
     
-    // Always show modal, even for 0 minutes
+    // Process session result and show appropriate modal
     if (minutesCompleted > 0) {
       const result = completeSession(minutesCompleted, "focus");
       
-      // Show level-up toast if leveled up
+      // Show level-up toast if player leveled up during this session
       if (result.leveledUp && result.newLevel) {
         setLevelUpData({ newLevel: result.newLevel });
         setShowLevelUpToast(true);
         
-        // Show session modal after level-up toast
+        // Delay modal to show level-up toast first
         setTimeout(() => {
           setSessionResult({
             xpGained: result.xpGained,
@@ -173,6 +179,7 @@ export default function FocusTimer() {
           setShowModal(true);
         }, 1500);
       } else {
+        // Show session completion modal immediately
         setSessionResult({
           xpGained: result.xpGained,
           message: getRandomMessage(SESSION_COMPLETE_MESSAGES),
@@ -182,6 +189,7 @@ export default function FocusTimer() {
         setShowModal(true);
       }
     } else {
+      // Session was too short to count
       setSessionResult({
         xpGained: 0,
         message: "too short, try again",

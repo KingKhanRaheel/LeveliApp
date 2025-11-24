@@ -135,34 +135,40 @@ export default function PomodoroTimer() {
   }, [totalSeconds, mode, cycle, reset]);
 
   const handleEnd = () => {
+    // Wrap It button: End the current pomodoro session
     // In strict mode, show warning about XP loss (only during focus sessions)
     if (strictMode && isRunning && mode === "focus") {
       setShowPrematureExitWarning(true);
       return;
     }
 
+    // End the current timer segment and calculate total completed minutes
     const minutesDone = end();
     const totalCompleted = completedMinutes + (mode === "focus" ? minutesDone : 0);
     
-    // Send notification
+    // Send completion notification to user
     if ("Notification" in window && Notification.permission === "granted") {
-      new Notification("Pomodoro Complete!", {
-        body: `You completed ${totalCompleted} minutes of focused work!`,
-        icon: "/favicon.png"
-      });
+      try {
+        new Notification("Pomodoro Complete!", {
+          body: `You completed ${totalCompleted} minutes of focused work!`,
+          icon: "/favicon.png"
+        });
+      } catch (error) {
+        console.log("Notification failed:", error);
+      }
     }
     
-    // Always show modal
+    // Process pomodoro session result and show modal
     if (totalCompleted > 0) {
       const pomodoroBonus = cycle > 0;
       const result = completeSession(totalCompleted, "pomodoro", pomodoroBonus);
       
-      // Show level-up toast if leveled up
+      // Show level-up toast if player leveled up during this pomodoro cycle
       if (result.leveledUp && result.newLevel) {
         setLevelUpData({ newLevel: result.newLevel });
         setShowLevelUpToast(true);
         
-        // Show session modal after level-up toast
+        // Delay modal to show level-up toast first
         setTimeout(() => {
           setSessionResult({
             xpGained: result.xpGained,
@@ -173,6 +179,7 @@ export default function PomodoroTimer() {
           setShowModal(true);
         }, 1500);
       } else {
+        // Show session completion modal immediately
         setSessionResult({
           xpGained: result.xpGained,
           message: getRandomMessage(SESSION_COMPLETE_MESSAGES),
@@ -182,6 +189,7 @@ export default function PomodoroTimer() {
         setShowModal(true);
       }
     } else {
+      // Session was too short to count
       setSessionResult({
         xpGained: 0,
         message: "too short, try again",
@@ -190,7 +198,7 @@ export default function PomodoroTimer() {
       setShowModal(true);
     }
     
-    // Clear pomodoro state
+    // Clean up pomodoro state from storage
     localStorage.removeItem("pomodoro_state");
   };
 
