@@ -403,7 +403,7 @@ export default function PomodoroTimer() {
               
               <div className="space-y-4">
                 <Button
-                  onClick={() => handleDurationSelect(focusDuration)}
+                  onClick={() => handleDurationSelect(focusDuration, strictMode)}
                   className="w-full"
                   size="lg"
                 >
