@@ -8,6 +8,7 @@ import TimerControls from "@/components/TimerControls";
 import MusicToggle from "@/components/MusicToggle";
 import SessionCompleteModal from "@/components/SessionCompleteModal";
 import StrictModeWarningModal from "@/components/StrictModeWarningModal";
+import StrictModePrematureExitModal from "@/components/StrictModePrematureExitModal";
 import DurationSelector from "@/components/DurationSelector";
 import { useTimer } from "@/hooks/useTimer";
 import { useGameState } from "@/hooks/useGameState";
@@ -29,6 +30,7 @@ export default function FocusTimer() {
   const [messageIndex, setMessageIndex] = useState(0);
   const [strictMode, setStrictMode] = useState(false);
   const [showExitWarning, setShowExitWarning] = useState(false);
+  const [showPrematureExitWarning, setShowPrematureExitWarning] = useState(false);
   const [showLevelUpToast, setShowLevelUpToast] = useState(false);
   const [levelUpData, setLevelUpData] = useState<{ newLevel: number } | null>(null);
 
@@ -115,7 +117,28 @@ export default function FocusTimer() {
     setLocation("/");
   };
 
+  const confirmPrematureExit = () => {
+    setShowPrematureExitWarning(false);
+    end(); // Actually end the timer and lose XP
+    
+    // Show loss notification
+    const result = {
+      xpGained: 0,
+      message: "You lost it all. Better luck next time.",
+      leveledUp: false
+    };
+    
+    setSessionResult(result);
+    setShowModal(true);
+  };
+
   const handleEnd = () => {
+    // In strict mode, show warning about XP loss
+    if (strictMode && isRunning) {
+      setShowPrematureExitWarning(true);
+      return;
+    }
+
     const minutesCompleted = end();
     
     // Send notification
@@ -251,6 +274,14 @@ export default function FocusTimer() {
         open={showExitWarning}
         onConfirm={confirmExit}
         onCancel={() => setShowExitWarning(false)}
+      />
+
+      <StrictModePrematureExitModal
+        open={showPrematureExitWarning}
+        onConfirm={confirmPrematureExit}
+        onCancel={() => setShowPrematureExitWarning(false)}
+        minutesFocused={minutes}
+        xpAtRisk={minutes}
       />
 
       {levelUpData && (

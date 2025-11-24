@@ -9,6 +9,7 @@ import MusicToggle from "@/components/MusicToggle";
 import PomodoroIndicator from "@/components/PomodoroIndicator";
 import SessionCompleteModal from "@/components/SessionCompleteModal";
 import StrictModeWarningModal from "@/components/StrictModeWarningModal";
+import StrictModePrematureExitModal from "@/components/StrictModePrematureExitModal";
 import DurationSelector from "@/components/DurationSelector";
 import BubbleTimer from "@/components/BubbleTimer";
 import { Slider } from "@/components/ui/slider";
@@ -50,6 +51,7 @@ export default function PomodoroTimer() {
   const [messageIndex, setMessageIndex] = useState(0);
   const [strictMode, setStrictMode] = useState(false);
   const [showExitWarning, setShowExitWarning] = useState(false);
+  const [showPrematureExitWarning, setShowPrematureExitWarning] = useState(false);
   const [showLevelUpToast, setShowLevelUpToast] = useState(false);
   const [levelUpData, setLevelUpData] = useState<{ newLevel: number } | null>(null);
   

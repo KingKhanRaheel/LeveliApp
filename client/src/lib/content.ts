@@ -19,13 +19,22 @@ export const MID_SESSION_MESSAGES = [
   "No cap, you're crushing it"
 ];
 
-// Strict mode exit warning messages
+// Strict mode exit warning messages (leaving page)
 export const STRICT_MODE_WARNINGS = [
   "Leaving breaks your streak. Sure?",
   "Don't quit now. You'll regret it.",
   "Exit = streak reset. Make the right choice.",
   "Really? You were doing so well.",
   "Stay locked in. Don't fold now."
+];
+
+// Strict mode premature end warning messages (XP loss)
+export const STRICT_MODE_END_WARNINGS = [
+  "Ending early? That's no XP. You sure?",
+  "You'll lose all XP if you quit now.",
+  "Premature exit = zero reward. Think twice.",
+  "Bail out? You get nothing. Worth it?",
+  "Stop now and lose all progress. Still want to?"
 ];
 
 // Level-up celebration messages
