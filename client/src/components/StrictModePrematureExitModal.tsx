@@ -1,5 +1,5 @@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { getRandomMessage } from "@/lib/content";
+import { useState, useEffect } from "react";
 
 interface StrictModePrematureExitModalProps {
   open: boolean;
@@ -24,7 +24,19 @@ export default function StrictModePrematureExitModal({
     "Stop now and lose all progress. Still want to?"
   ];
   
-  const message = getRandomMessage(warnings);
+  const [messageIndex, setMessageIndex] = useState(0);
+  
+  useEffect(() => {
+    if (!open) return;
+    
+    const interval = setInterval(() => {
+      setMessageIndex((prev) => (prev + 1) % warnings.length);
+    }, 3000);
+    
+    return () => clearInterval(interval);
+  }, [open, warnings.length]);
+  
+  const message = warnings[messageIndex];
   
   return (
     <AlertDialog open={open} onOpenChange={(isOpen) => !isOpen && onCancel()}>

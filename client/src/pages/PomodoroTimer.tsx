@@ -253,7 +253,7 @@ export default function PomodoroTimer() {
     
     // Show loss notification
     const result = {
-      xpGained: 0,
+      xpGained: -minutesFocused,
       message: `Lost ${minutesFocused} XP. Don't fold next time.`,
       leveledUp: false
     };

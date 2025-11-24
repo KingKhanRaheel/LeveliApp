@@ -88,7 +88,7 @@ export default function SessionCompleteModal({
             {message}
           </motion.p>
           
-          {/* XP gained with glow animation */}
+          {/* XP gained/lost with glow animation */}
           <motion.div
             initial={{ scale: 0.5, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
@@ -100,11 +100,11 @@ export default function SessionCompleteModal({
             }}
             className="relative"
           >
-            <div className="absolute inset-0 bg-gradient-to-r from-primary to-purple-500 blur-3xl opacity-30 rounded-full" />
-            <div className="relative flex items-center justify-center gap-3 p-6 rounded-2xl bg-gradient-to-br from-primary/10 to-purple-500/10 border-2 border-primary/30">
-              <Zap className="w-8 h-8 text-primary fill-primary" />
-              <span className="text-6xl font-display font-bold bg-gradient-to-r from-primary to-purple-500 bg-clip-text text-transparent">
-                +{xpGained}
+            <div className={`absolute inset-0 blur-3xl opacity-30 rounded-full ${xpGained >= 0 ? 'bg-gradient-to-r from-primary to-purple-500' : 'bg-gradient-to-r from-destructive to-red-500'}`} />
+            <div className={`relative flex items-center justify-center gap-3 p-6 rounded-2xl border-2 ${xpGained >= 0 ? 'bg-gradient-to-br from-primary/10 to-purple-500/10 border-primary/30' : 'bg-gradient-to-br from-destructive/10 to-red-500/10 border-destructive/30'}`}>
+              <Zap className={`w-8 h-8 fill-current ${xpGained >= 0 ? 'text-primary' : 'text-destructive'}`} />
+              <span className={`text-6xl font-display font-bold bg-clip-text text-transparent ${xpGained >= 0 ? 'bg-gradient-to-r from-primary to-purple-500' : 'bg-gradient-to-r from-destructive to-red-500'}`}>
+                {xpGained >= 0 ? '+' : ''}{xpGained}
               </span>
               <span className="text-2xl font-bold text-muted-foreground">XP</span>
             </div>
