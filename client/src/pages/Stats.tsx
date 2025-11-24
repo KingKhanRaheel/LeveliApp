@@ -1,5 +1,6 @@
 import { Clock, Flame, Trophy, TrendingUp, TrendingDown } from "lucide-react";
 import StatCard from "@/components/StatCard";
+import AdPlaceholder from "@/components/AdPlaceholder";
 import { useGameState } from "@/hooks/useGameState";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Cell } from "recharts";
@@ -148,6 +149,8 @@ export default function Stats() {
             </div>
           </CardContent>
         </Card>
+
+        <AdPlaceholder />
       </div>
     </div>
   );

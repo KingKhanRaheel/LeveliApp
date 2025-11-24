@@ -9,6 +9,7 @@ import ActionCard from "@/components/ActionCard";
 import ThemeToggle from "@/components/ThemeToggle";
 import ThemeSelector from "@/components/ThemeSelector";
 import AchievementUnlockModal from "@/components/AchievementUnlockModal";
+import AdPlaceholder from "@/components/AdPlaceholder";
 import { useGameState } from "@/hooks/useGameState";
 import { soundManager } from "@/lib/sounds";
 
@@ -94,6 +95,10 @@ export default function Home() {
 
             <StreakCounter days={stats.streakDays} />
           </div>
+        </motion.div>
+
+        <motion.div variants={item}>
+          <AdPlaceholder />
         </motion.div>
 
         <motion.div variants={item} className="space-y-6">

@@ -1,9 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Shield } from "lucide-react";
 import { useState } from "react";
+import { BUTTON_LABELS } from "@/lib/content";
 
 interface DurationSelectorProps {
-  onSelect: (minutes: number) => void;
+  onSelect: (minutes: number, strictMode?: boolean) => void;
   defaultMinutes?: number;
   minMinutes?: number;
   maxMinutes?: number;
@@ -18,6 +22,7 @@ export default function DurationSelector({
   type = "focus"
 }: DurationSelectorProps) {
   const [minutes, setMinutes] = useState(defaultMinutes);
+  const [strictMode, setStrictMode] = useState(false);
 
   const presets = type === "focus" 
     ? [15, 25, 45, 60, 90]
@@ -60,13 +65,35 @@ export default function DurationSelector({
           ))}
         </div>
 
+        {type === "focus" && (
+          <div className="flex items-center justify-between p-4 rounded-lg border border-border bg-card">
+            <div className="flex items-center gap-3">
+              <Shield className="w-5 h-5 text-muted-foreground" />
+              <div className="space-y-0.5">
+                <Label htmlFor="strict-mode" className="text-sm font-medium cursor-pointer">
+                  Strict Mode
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Fullscreen lock, warns on exit
+                </p>
+              </div>
+            </div>
+            <Switch
+              id="strict-mode"
+              checked={strictMode}
+              onCheckedChange={setStrictMode}
+              data-testid="switch-strict-mode"
+            />
+          </div>
+        )}
+
         <Button
-          onClick={() => onSelect(minutes)}
+          onClick={() => onSelect(minutes, strictMode)}
           className="w-full"
           size="lg"
           data-testid="button-start"
         >
-          Start {type === "focus" ? "Focus" : "Break"}
+          {type === "focus" ? BUTTON_LABELS.startFocus : BUTTON_LABELS.breakTime}
         </Button>
       </div>
     </div>

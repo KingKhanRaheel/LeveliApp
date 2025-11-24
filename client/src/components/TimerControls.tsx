@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Play, Pause, Square } from "lucide-react";
+import { BUTTON_LABELS } from "@/lib/content";
 
 interface TimerControlsProps {
   isRunning: boolean;
@@ -30,7 +31,7 @@ export default function TimerControls({ isRunning, onPlayPause, onEnd }: TimerCo
         className="text-sm"
       >
         <Square className="w-4 h-4 mr-2" />
-        End Session
+        {BUTTON_LABELS.endSession}
       </Button>
     </div>
   );

@@ -1,31 +1,41 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import TimerDisplay from "@/components/TimerDisplay";
 import TimerControls from "@/components/TimerControls";
+import MusicToggle from "@/components/MusicToggle";
 import SessionCompleteModal from "@/components/SessionCompleteModal";
+import StrictModeWarningModal from "@/components/StrictModeWarningModal";
 import DurationSelector from "@/components/DurationSelector";
 import { useTimer } from "@/hooks/useTimer";
 import { useGameState } from "@/hooks/useGameState";
-import { getRandomMessage } from "@/lib/achievements";
+import { MID_SESSION_MESSAGES, SESSION_COMPLETE_MESSAGES, getRandomMessage, getRandomInterval } from "@/lib/content";
 import { motion, AnimatePresence } from "framer-motion";
+import LevelUpToast from "@/components/LevelUpToast";
 
-// Motivational messages that rotate during focus
-const MOTIVATIONAL_MESSAGES = [
-  "Brain cells activated",
-  "No scrolling. Stay locked.",
-  "Future you will thank you.",
-  "Focus mode engaged",
-  "You're doing great",
-  "Deep work in progress"
-];
+// Request notification permission
+const requestNotificationPermission = async () => {
+  if ("Notification" in window && Notification.permission === "default") {
+    await Notification.requestPermission();
+  }
+};
 
 export default function FocusTimer() {
   const [, setLocation] = useLocation();
   const [selectedDuration, setSelectedDuration] = useState<number | null>(null);
   const [hasStarted, setHasStarted] = useState(false);
   const [messageIndex, setMessageIndex] = useState(0);
+  const [strictMode, setStrictMode] = useState(false);
+  const [showExitWarning, setShowExitWarning] = useState(false);
+  const [showLevelUpToast, setShowLevelUpToast] = useState(false);
+  const [levelUpData, setLevelUpData] = useState<{ newLevel: number } | null>(null);
+
+  // Request notification permission when component mounts
+  useEffect(() => {
+    requestNotificationPermission();
+  }, []);
   
   const duration = selectedDuration || 25;
   const { minutes, seconds, isRunning, toggleTimer, end, reset } = useTimer(duration, "focus_timer_state");
@@ -38,13 +48,20 @@ export default function FocusTimer() {
     newLevel?: number;
   } | null>(null);
 
-  // Rotate motivational messages during countdown
+  // Rotate motivational messages during countdown with random intervals
   useEffect(() => {
     if (isRunning) {
-      const interval = setInterval(() => {
-        setMessageIndex((prev) => (prev + 1) % MOTIVATIONAL_MESSAGES.length);
-      }, 8000); // Change message every 8 seconds
-      return () => clearInterval(interval);
+      const scheduleNextMessage = () => {
+        const randomDelay = getRandomInterval(5, 10);
+        const timeout = setTimeout(() => {
+          setMessageIndex((prev) => (prev + 1) % MID_SESSION_MESSAGES.length);
+          scheduleNextMessage();
+        }, randomDelay);
+        return timeout;
+      };
+      
+      const timeout = scheduleNextMessage();
+      return () => clearTimeout(timeout);
     } else {
       // Reset message index when timer stops
       setMessageIndex(0);
@@ -63,32 +80,88 @@ export default function FocusTimer() {
     }
   }, []);
 
-  const handleDurationSelect = (mins: number) => {
+  const handleDurationSelect = (mins: number, strict?: boolean) => {
     setSelectedDuration(mins);
     setHasStarted(true);
+    setStrictMode(strict || false);
     reset(mins);
+  };
+
+  // Enter fullscreen when timer starts if strict mode is on
+  useEffect(() => {
+    if (isRunning && strictMode) {
+      const elem = document.documentElement;
+      if (elem.requestFullscreen && !document.fullscreenElement) {
+        elem.requestFullscreen().catch(() => {
+          // Fullscreen request failed, continue anyway
+        });
+      }
+    }
+  }, [isRunning, strictMode]);
+
+  const handleBackClick = () => {
+    if (isRunning && strictMode) {
+      setShowExitWarning(true);
+    } else {
+      setLocation("/");
+    }
+  };
+
+  const confirmExit = () => {
+    setShowExitWarning(false);
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
+    }
+    setLocation("/");
   };
 
   const handleEnd = () => {
     const minutesCompleted = end();
     
+    // Send notification
+    if ("Notification" in window && Notification.permission === "granted") {
+      new Notification("Focus Session Complete!", {
+        body: `You focused for ${minutesCompleted} minutes. Nice work!`,
+        icon: "/favicon.png"
+      });
+    }
+    
     // Always show modal, even for 0 minutes
     if (minutesCompleted > 0) {
       const result = completeSession(minutesCompleted, "focus");
-      setSessionResult({
-        xpGained: result.xpGained,
-        message: getRandomMessage(),
-        leveledUp: result.leveledUp,
-        newLevel: result.newLevel
-      });
+      
+      // Show level-up toast if leveled up
+      if (result.leveledUp && result.newLevel) {
+        setLevelUpData({ newLevel: result.newLevel });
+        setShowLevelUpToast(true);
+        
+        // Show session modal after level-up toast
+        setTimeout(() => {
+          setSessionResult({
+            xpGained: result.xpGained,
+            message: getRandomMessage(SESSION_COMPLETE_MESSAGES),
+            leveledUp: result.leveledUp,
+            newLevel: result.newLevel
+          });
+          setShowModal(true);
+        }, 1500);
+      } else {
+        setSessionResult({
+          xpGained: result.xpGained,
+          message: getRandomMessage(SESSION_COMPLETE_MESSAGES),
+          leveledUp: result.leveledUp,
+          newLevel: result.newLevel
+        });
+        setShowModal(true);
+      }
     } else {
       setSessionResult({
         xpGained: 0,
         message: "too short, try again",
         leveledUp: false
       });
+      setShowModal(true);
     }
-    setShowModal(true);
   };
 
   const handleModalClose = () => {
@@ -105,12 +178,20 @@ export default function FocusTimer() {
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => setLocation("/")}
+          onClick={handleBackClick}
           data-testid="button-back"
         >
           <ArrowLeft className="w-5 h-5" />
         </Button>
-        <span className="text-sm font-medium text-muted-foreground">Focus Timer</span>
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-muted-foreground">Focus Timer</span>
+          {hasStarted && strictMode && (
+            <Badge variant="secondary" className="text-xs">
+              <Shield className="w-3 h-3 mr-1" />
+              Strict
+            </Badge>
+          )}
+        </div>
         <div className="w-10" />
       </div>
 
@@ -127,25 +208,30 @@ export default function FocusTimer() {
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 10 }}
-                    transition={{ duration: 0.5 }}
-                    className="text-sm text-primary font-bold mb-4"
+                    transition={{ duration: 0.4 }}
+                    className="text-sm text-primary font-medium mb-4 min-h-[20px]"
                   >
-                    {MOTIVATIONAL_MESSAGES[messageIndex]}
+                    {MID_SESSION_MESSAGES[messageIndex]}
                   </motion.p>
                 ) : (
-                  <p className="text-sm text-muted-foreground mb-4 font-semibold">
-                    Ready to focus?
+                  <p className="text-sm text-muted-foreground mb-4 font-semibold min-h-[20px]">
+                    Ready to lock in?
                   </p>
                 )}
               </AnimatePresence>
               <TimerDisplay minutes={minutes} seconds={seconds} />
             </div>
 
-            <TimerControls
-              isRunning={isRunning}
-              onPlayPause={toggleTimer}
-              onEnd={handleEnd}
-            />
+            <div className="space-y-4 w-full max-w-xs mx-auto">
+              <TimerControls
+                isRunning={isRunning}
+                onPlayPause={toggleTimer}
+                onEnd={handleEnd}
+              />
+              <div className="flex justify-center">
+                <MusicToggle isTimerRunning={isRunning} />
+              </div>
+            </div>
           </>
         )}
       </div>
@@ -158,6 +244,20 @@ export default function FocusTimer() {
           message={sessionResult.message}
           leveledUp={sessionResult.leveledUp}
           newLevel={sessionResult.newLevel}
+        />
+      )}
+
+      <StrictModeWarningModal
+        open={showExitWarning}
+        onConfirm={confirmExit}
+        onCancel={() => setShowExitWarning(false)}
+      />
+
+      {levelUpData && (
+        <LevelUpToast
+          show={showLevelUpToast}
+          newLevel={levelUpData.newLevel}
+          onComplete={() => setShowLevelUpToast(false)}
         />
       )}
     </div>

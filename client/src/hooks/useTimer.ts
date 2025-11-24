@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { soundManager } from "@/lib/sounds";
 
 export interface TimerState {
   minutes: number;
@@ -69,6 +70,9 @@ export function useTimer(initialMinutes: number = 25, storageKey: string = "time
         setIsRunning(false);
         startTimestampRef.current = null;
         startingSecondsRef.current = null;
+        
+        // Play alarm sound when timer ends
+        soundManager.playTimerEnd();
         
         const state: StoredTimerState = {
           remainingSeconds: 0,

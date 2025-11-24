@@ -11,6 +11,7 @@ import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { useGameState } from "@/hooks/useGameState";
 import { soundManager } from "@/lib/sounds";
+import { BUTTON_LABELS } from "@/lib/content";
 
 interface SessionCompleteModalProps {
   open: boolean;
@@ -152,7 +153,7 @@ export default function SessionCompleteModal({
               size="lg"
               data-testid="button-continue"
             >
-              Continue
+              {BUTTON_LABELS.backToHome}
             </Button>
           </motion.div>
         </div>
