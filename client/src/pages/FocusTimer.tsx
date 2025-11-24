@@ -114,17 +114,6 @@ export default function FocusTimer() {
     if (document.fullscreenElement) {
       document.exitFullscreen();
     }
-    
-    // Send phone notification that timer is still running
-    if ("Notification" in window && Notification.permission === "granted") {
-      new Notification("Focus Timer Running", {
-        body: `Timer is still running: ${minutes}:${seconds.toString().padStart(2, "0")}. Come back to keep your streak!`,
-        icon: "/favicon.png",
-        tag: "focus-timer-running",
-        requireInteraction: true
-      });
-    }
-    
     setLocation("/");
   };
 

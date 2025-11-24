@@ -240,17 +240,6 @@ export default function PomodoroTimer() {
     if (document.fullscreenElement) {
       document.exitFullscreen();
     }
-    
-    // Send phone notification that timer is still running
-    if ("Notification" in window && Notification.permission === "granted") {
-      new Notification("Pomodoro Timer Running", {
-        body: `${mode === "focus" ? "Focus" : "Break"} timer still going: ${minutes}:${seconds.toString().padStart(2, "0")}. Don't lose your streak!`,
-        icon: "/favicon.png",
-        tag: "pomodoro-timer-running",
-        requireInteraction: true
-      });
-    }
-    
     setLocation("/");
   };
 
