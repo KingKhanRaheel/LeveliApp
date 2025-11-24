@@ -203,6 +203,23 @@ export function useGameState() {
     return { xpGained, leveledUp, newLevel, newAchievements };
   };
 
+  const deductXP = (amount: number) => {
+    const newXP = Math.max(0, progress.xp - amount);
+    const newLevel = calculateLevel(newXP);
+    
+    const newProgress = {
+      ...progress,
+      xp: newXP,
+      level: newLevel
+    };
+    
+    setProgress(newProgress);
+    localStorage.setItem("focusgate_progress", JSON.stringify(newProgress));
+    window.dispatchEvent(new Event("progressUpdated"));
+    
+    return { newXP, newLevel };
+  };
+
   const getStats = () => {
     const today = new Date().toDateString();
     const dailyMinutes = progress.sessions
@@ -235,6 +252,7 @@ export function useGameState() {
   return {
     progress,
     completeSession,
+    deductXP,
     getStats
   };
 }

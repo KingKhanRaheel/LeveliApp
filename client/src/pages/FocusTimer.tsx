@@ -41,7 +41,7 @@ export default function FocusTimer() {
   
   const duration = selectedDuration || 25;
   const { minutes, seconds, isRunning, toggleTimer, end, reset } = useTimer(duration, "focus_timer_state");
-  const { completeSession } = useGameState();
+  const { completeSession, deductXP } = useGameState();
   const [showModal, setShowModal] = useState(false);
   const [sessionResult, setSessionResult] = useState<{
     xpGained: number;
@@ -119,12 +119,16 @@ export default function FocusTimer() {
 
   const confirmPrematureExit = () => {
     setShowPrematureExitWarning(false);
-    end(); // Actually end the timer and lose XP
+    const minutesFocused = minutes;
+    end(); // End the timer
+    
+    // Deduct XP from total
+    deductXP(minutesFocused);
     
     // Show loss notification
     const result = {
       xpGained: 0,
-      message: "You lost it all. Better luck next time.",
+      message: `Lost ${minutesFocused} XP. Don't fold next time.`,
       leveledUp: false
     };
     
