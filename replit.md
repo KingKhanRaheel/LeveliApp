@@ -159,10 +159,31 @@ Session completion messages use Gen-Z vernacular:
 - Keyboard navigation support
 - Screen reader descriptions
 
+## PWA Features (Implemented)
+### Service Worker & Notifications
+- Service worker registered with timer notification support
+- Periodic timer updates while app is running
+- Notification permission handling
+
+### Auto-Complete Sessions
+- Timers automatically complete when countdown reaches zero
+- XP calculation and session modals triggered automatically
+- Seamless transition from timer complete to session results
+
+### Smart Install Prompt
+- PWA install banner appears after 3 sessions or 10+ minutes of usage
+- Dismiss cooldown: 3 days OR 5 more sessions required before re-showing
+- Event-driven tracking system that re-evaluates eligibility after each session
+- Non-intrusive banner placement
+
+### Theme Card Improvements
+- Fixed overflow issues with proper text wrapping
+- Consistent card heights across all themes
+- Improved spacing and layout for better readability
+
 ## Future Enhancements (Phase 2)
 - Unlockable premium themes (Pastel, Neon, Anime, Forest, Cyber)
 - Sound effects and celebration animations
-- PWA support with offline mode
 - Data export functionality
 - Cloud sync for cross-device access
 - Advanced statistics (productivity heatmap, focus time analysis)
