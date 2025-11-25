@@ -40,8 +40,44 @@ export default function FocusTimer() {
   }, []);
   
   const duration = selectedDuration || 25;
-  const { minutes, seconds, isRunning, toggleTimer, end, reset } = useTimer(duration, "focus_timer_state");
   const { completeSession, deductXP } = useGameState();
+  
+  const handleTimerComplete = () => {
+    const minutesCompleted = duration;
+    
+    if (minutesCompleted > 0) {
+      const result = completeSession(minutesCompleted, "focus");
+      
+      if (result.leveledUp && result.newLevel) {
+        setLevelUpData({ newLevel: result.newLevel });
+        setShowLevelUpToast(true);
+        
+        setTimeout(() => {
+          setSessionResult({
+            xpGained: result.xpGained,
+            message: getRandomMessage(SESSION_COMPLETE_MESSAGES),
+            leveledUp: result.leveledUp,
+            newLevel: result.newLevel
+          });
+          setShowModal(true);
+        }, 1500);
+      } else {
+        setSessionResult({
+          xpGained: result.xpGained,
+          message: getRandomMessage(SESSION_COMPLETE_MESSAGES),
+          leveledUp: result.leveledUp,
+          newLevel: result.newLevel
+        });
+        setShowModal(true);
+      }
+    }
+  };
+  
+  const { minutes, seconds, isRunning, toggleTimer, end, reset } = useTimer(
+    duration, 
+    "focus_timer_state",
+    { onTimerComplete: handleTimerComplete }
+  );
   const [showModal, setShowModal] = useState(false);
   const [sessionResult, setSessionResult] = useState<{
     xpGained: number;

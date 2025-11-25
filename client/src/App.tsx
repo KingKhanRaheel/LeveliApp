@@ -9,6 +9,7 @@ import PomodoroTimer from "@/pages/PomodoroTimer";
 import Stats from "@/pages/Stats";
 import Achievements from "@/pages/Achievements";
 import BottomNav from "@/components/BottomNav";
+import PWAInstallBanner from "@/components/PWAInstallBanner";
 import NotFound from "@/pages/not-found";
 import { useTheme } from "@/hooks/useTheme";
 
@@ -36,6 +37,7 @@ function App() {
           <Route path="/" component={BottomNav} />
           <Route path="/stats" component={BottomNav} />
           <Route path="/achievements" component={BottomNav} />
+          <PWAInstallBanner />
         </div>
         <Toaster />
       </TooltipProvider>

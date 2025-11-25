@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { ACHIEVEMENTS, calculateLevel, getXPForNextLevel, getCurrentLevelXP } from "@/lib/achievements";
+import { trackSessionForPWA } from "@/hooks/usePWAInstall";
 
 interface Session {
   id: string;
@@ -199,6 +200,9 @@ export function useGameState() {
       const pending = JSON.parse(sessionStorage.getItem("pending_achievements") || "[]");
       sessionStorage.setItem("pending_achievements", JSON.stringify([...pending, ...newAchievements]));
     }
+    
+    // Track session for PWA install prompt
+    trackSessionForPWA(minutes);
 
     return { xpGained, leveledUp, newLevel, newAchievements };
   };

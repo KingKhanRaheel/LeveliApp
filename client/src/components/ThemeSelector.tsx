@@ -77,15 +77,15 @@ export default function ThemeSelector() {
                 key={theme.id}
                 onClick={() => unlocked && handleThemeChange(theme.id)}
                 disabled={!unlocked}
-                className={`relative p-4 rounded-2xl border-2 transition-all ${
+                className={`relative p-4 rounded-md border-2 transition-all min-h-[160px] flex flex-col ${
                   isSelected
                     ? "border-primary bg-primary/5"
                     : unlocked
-                    ? "border-card-border hover:border-primary/30 hover:bg-card/50"
-                    : "border-card-border bg-muted/40 cursor-not-allowed"
+                    ? "border-card-border hover:border-primary/30"
+                    : "border-card-border bg-muted/40 cursor-not-allowed opacity-60"
                 }`}
-                whileHover={unlocked ? { scale: 1.05 } : {}}
-                whileTap={unlocked ? { scale: 0.95 } : {}}
+                whileHover={unlocked ? { scale: 1.02 } : {}}
+                whileTap={unlocked ? { scale: 0.98 } : {}}
                 data-testid={`button-theme-${theme.id}`}
               >
                 {isSelected && (
@@ -102,19 +102,21 @@ export default function ThemeSelector() {
                   </div>
                 )}
                 
-                <div className="text-center space-y-2">
-                  <div className="text-3xl">{theme.icon}</div>
-                  <div>
-                    <h4 className="font-bold text-sm">{theme.name}</h4>
-                    <p className="text-xs text-muted-foreground/70 mt-1">
+                <div className="flex-1 flex flex-col items-center justify-center text-center space-y-2 overflow-hidden">
+                  <div className="text-3xl mb-1">{theme.icon}</div>
+                  <div className="w-full px-1">
+                    <h4 className="font-semibold text-sm leading-tight truncate">{theme.name}</h4>
+                    <p className="text-xs text-muted-foreground leading-snug mt-0.5 line-clamp-2">
                       {theme.description}
                     </p>
                   </div>
                   
                   {theme.unlockRequirement && theme.unlockRequirement.type !== "free" && (
-                    <Badge variant={unlocked ? "default" : "secondary"} className="text-xs font-semibold">
-                      {unlocked ? "Unlocked" : getUnlockText(theme)}
-                    </Badge>
+                    <div className="mt-auto pt-2">
+                      <Badge variant={unlocked ? "default" : "secondary"} className="text-xs">
+                        {unlocked ? "Unlocked" : getUnlockText(theme)}
+                      </Badge>
+                    </div>
                   )}
                 </div>
               </motion.button>

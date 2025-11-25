@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { soundManager } from "@/lib/sounds";
+import { sendMessageToSW, requestNotificationPermission } from "@/lib/serviceWorker";
 
 export interface TimerState {
   minutes: number;
@@ -16,7 +17,15 @@ interface StoredTimerState {
   initialDuration: number;
 }
 
-export function useTimer(initialMinutes: number = 25, storageKey: string = "timer_state") {
+export interface TimerCallbacks {
+  onTimerComplete?: () => void;
+}
+
+export function useTimer(
+  initialMinutes: number = 25, 
+  storageKey: string = "timer_state",
+  callbacks?: TimerCallbacks
+) {
   const [totalSeconds, setTotalSeconds] = useState(initialMinutes * 60);
   const [isRunning, setIsRunning] = useState(false);
   const startTimestampRef = useRef<number | null>(null);
@@ -74,6 +83,13 @@ export function useTimer(initialMinutes: number = 25, storageKey: string = "time
         // Play alarm sound when timer ends
         soundManager.playTimerEnd();
         
+        // Send completion notification
+        sendMessageToSW({
+          type: 'UPDATE_TIMER_NOTIFICATION',
+          remaining: 0,
+          isRunning: false
+        });
+        
         const state: StoredTimerState = {
           remainingSeconds: 0,
           isRunning: false,
@@ -82,6 +98,11 @@ export function useTimer(initialMinutes: number = 25, storageKey: string = "time
           initialDuration: initialMinutes * 60
         };
         localStorage.setItem(storageKey, JSON.stringify(state));
+        
+        // Trigger auto-complete callback
+        if (callbacks?.onTimerComplete) {
+          callbacks.onTimerComplete();
+        }
       } else {
         // Save state periodically
         const state: StoredTimerState = {
@@ -106,13 +127,37 @@ export function useTimer(initialMinutes: number = 25, storageKey: string = "time
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [isRunning, storageKey, initialMinutes]);
+  }, [isRunning, storageKey, initialMinutes, callbacks]);
+  
+  // Update notification every 10 seconds when running
+  useEffect(() => {
+    if (!isRunning) {
+      sendMessageToSW({ type: 'CLEAR_TIMER_NOTIFICATION' });
+      return;
+    }
+    
+    const updateNotification = () => {
+      sendMessageToSW({
+        type: 'UPDATE_TIMER_NOTIFICATION',
+        remaining: totalSeconds,
+        isRunning: true
+      });
+    };
+    
+    updateNotification();
+    const interval = setInterval(updateNotification, 10000);
+    
+    return () => clearInterval(interval);
+  }, [isRunning, totalSeconds]);
 
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = Math.floor(totalSeconds % 60);
 
-  const toggleTimer = () => {
+  const toggleTimer = async () => {
     if (!isRunning) {
+      // Request notification permission when starting timer
+      await requestNotificationPermission();
+      
       // Starting - set start timestamp to now and remember current totalSeconds
       const now = Date.now();
       startTimestampRef.current = now;
